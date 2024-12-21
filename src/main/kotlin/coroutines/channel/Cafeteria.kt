@@ -1,9 +1,6 @@
 package coroutines.channel.cafeteria
 
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.channels.ReceiveChannel
-import kotlinx.coroutines.channels.SendChannel
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -23,7 +20,25 @@ class Latte(milk: Milk, espresso: Espresso) : Coffee() {
 }
 
 suspend fun main() = coroutineScope {
-    // TODO
+    val listOfBaristas = listOf("Alice","Bob","Celine","Dave")
+    val orderSendChannel = Channel<CoffeeType>(Channel.UNLIMITED)
+    val coffeeReadyChannel = Channel<Coffee>(Channel.UNLIMITED)
+
+    launch {
+        for (order in orderSendChannel) {
+            for (barista in listOfBaristas) {
+                val coffee = makeCoffee(order, barista)
+                coffeeReadyChannel.send(coffee)
+            }
+        }
+    }
+
+    launch {  for(coffee in coffeeReadyChannel){
+        println("$coffee is ready")
+    }
+        }
+
+
 
     println("Welcome to Dream Coffee!")
     println("Press E to get espresso, L to get latte.")
@@ -33,8 +48,8 @@ suspend fun main() = coroutineScope {
             "L" -> CoffeeType.LATTE
             else -> continue
         }
-        // TODO
         println("Order for $type sent")
+        orderSendChannel.send(type)
     }
 }
 

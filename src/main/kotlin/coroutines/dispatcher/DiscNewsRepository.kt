@@ -9,8 +9,11 @@ class DiscNewsRepository(
     private val discReader: DiscReader
 ) : NewsRepository {
     override suspend fun getNews(newsId: String): News {
-        val (title, content) = discReader.read("user/$newsId")
-        return News(title, content)
+        val news = withContext(Dispatchers.IO.limitedParallelism(200)) {
+            val (title, content) = discReader.read("user/$newsId")
+            return@withContext News(title, content)
+        }
+        return news
     }
 }
 

@@ -25,11 +25,20 @@ class CompanyDetailsRepository(
         return current
     }
 
-    fun getDetailsOrNull(company: Company): CompanyDetails? = 
-        details[company]
+    fun getDetailsOrNull(company: Company): CompanyDetails? {
+        val lock = Any()
+        synchronized(lock) {
+            return@synchronized details[company]
+        }
+        return null
+    }
 
-    fun getReadyDetails(): Map<Company, CompanyDetails> =
-        details
+    fun getReadyDetails(): Map<Company, CompanyDetails> {
+        val lock = Any()
+        synchronized(lock){
+          return details
+        }
+    }
     
     fun clear() {
         details.clear()

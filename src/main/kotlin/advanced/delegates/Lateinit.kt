@@ -8,6 +8,9 @@ import kotlin.test.assertEquals
 import kotlin.test.assertIs
 
 // TODO
+fun LateInit() {
+
+}
 
 // Implement Lateinit delegate here
 // Easy: Uncomment the first 2 tests and implement Lateinit so it works for Int type

@@ -9,10 +9,33 @@ import org.junit.Test
 import kotlin.system.measureTimeMillis
 import kotlin.test.assertEquals
 
+
+// IntheBestStudentUseCaseclass,implementthegetBestStudentfunction,
+// which fetches all students from
+// thegivensemesterandthenfindstheonewiththebest result.Forthis,itfirstneedstouseStudentsRepositorytofindtheIDsofstudents inthesemester,afterwhichitneedstofetchtheseusers’details.Fetchingdetails shouldbedoneasynchronously.Thebestuseristheonewiththehighestresult value. If there are no students in the given semester, the function should throw IllegalStateException.
+
+/*
+IntheBestStudentUseCaseclass,implementthegetBestStudentfunction,which fetches all studentsfromthegivensemesterandthenfindstheonewiththebest result.Forthis,itfirstneedstouseStudentsRepositorytofindtheIDsofstudents inthesemester,afterwhichitneedstofetchtheseusers’details.Fetchingdetails shouldbedoneasynchronously.Thebestuseristheonewiththehighestresult value. If there are no students in the given semester, the function should throw IllegalStateException.
+* */
+
 class BestStudentUseCase(
     private val repo: StudentsRepository
 ) {
-    suspend fun getBestStudent(semester: String): Student = TODO()
+    suspend fun getBestStudent(semester: String): Student {
+        val student = coroutineScope {
+            val studentIds = repo.getStudentIds(semester)
+            if (studentIds.isEmpty()) {
+                throw IllegalStateException("No students in the semester")
+            }
+            val students = studentIds.map { id ->
+                async {
+                    repo.getStudent(id)
+                }
+            }
+            return@coroutineScope students.maxByOrNull { it.await().result }!!.await()
+        }
+        return student
+    }
 }
 
 data class Student(val id: Int, val result: Double, val semester: String)

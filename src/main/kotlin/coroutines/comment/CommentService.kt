@@ -15,10 +15,29 @@ class CommentService(
         collectionKey: String,
         body: AddComment
     ) {
-        TODO()
+        val user = userService.findUser(token)
+        val comment = commentFactory.toCommentDocument(user.id, collectionKey, body)
+        commentRepository.addComment(comment)
     }
 
     suspend fun getComments(
         collectionKey: String
-    ): CommentsCollection = TODO()
+    ): CommentsCollection {
+        return coroutineScope {
+            val comments = commentRepository.getComments(collectionKey)
+            val commentElements = comments.map { comment ->
+                async {
+                    val user = userService.findUserById(comment.userId)
+                    CommentElement(
+                        id = comment._id,
+                        collectionKey = comment.collectionKey,
+                        user = user,
+                        comment = comment.comment,
+                        date = comment.date
+                    )
+                }
+            }.awaitAll()
+            CommentsCollection(collectionKey, commentElements)
+        }
+    }
 }

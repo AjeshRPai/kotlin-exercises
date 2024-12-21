@@ -5,15 +5,22 @@ import kotlinx.coroutines.test.setMain
 import org.junit.Before
 import org.junit.Test
 import java.util.*
+import kotlin.coroutines.CoroutineContext
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
 abstract class BasePresenter(
     private val onError: (Throwable) -> Unit = {}
 ) {
-    val scope: CoroutineScope = TODO()
+    val coroutineExceptionHandler = CoroutineExceptionHandler{_, throwable -> onError.invoke(throwable)}
 
-    fun onDestroy() {}
+    val coroutineContext =  Dispatchers.Main + SupervisorJob() + coroutineExceptionHandler
+
+    val scope: CoroutineScope = CoroutineScope(coroutineContext)
+
+    fun onDestroy() {
+        coroutineContext.cancelChildren()
+    }
 }
 
 class MainPresenter(

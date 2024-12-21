@@ -3,6 +3,7 @@ package coroutines.scope.notificationsender
 import kotlinx.coroutines.*
 import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Test
+import kotlin.coroutines.CoroutineContext
 import kotlin.test.assertEquals
 
 class NotificationSender(
@@ -10,14 +11,23 @@ class NotificationSender(
     private val exceptionCollector: ExceptionCollector,
     dispatcher: CoroutineDispatcher,
 ) {
-    val scope: CoroutineScope = TODO()
+    val exceptionHandler =
+        CoroutineExceptionHandler { coroutineContext, throwable -> exceptionCollector.collectException(throwable) }
+
+    val context: CoroutineContext = SupervisorJob() + dispatcher + exceptionHandler
+
+    val scope = CoroutineScope(context)
 
     fun sendNotifications(notifications: List<Notification>) {
-        // TODO
+            notifications.forEach { notification ->
+                scope.launch {
+                    client.send(notification)
+                }
+        }
     }
 
     fun cancel() {
-        // TODO
+        context.cancelChildren()
     }
 }
 

@@ -15,6 +15,12 @@ interface ApplicationControlScope {
     fun isRunning(): Boolean
 }
 
+class ApplicationScope(
+    scope: CoroutineScope,
+    applicationScope: ApplicationControlScope,
+    loggingScope: LoggingScope
+): ApplicationControlScope by applicationScope, LoggingScope by loggingScope, CoroutineScope by scope
+
 data class Application(val name: String)
 
 interface LoggingScope {
@@ -24,42 +30,42 @@ interface LoggingScope {
 }
 
 class ApplicationScopeTest {
-//    private val fakeApplicationScope = FakeApplicationControlScope(
-//        application = Application("Test"),
-//    )
-//    private val fakeLoggingScope = FakeLoggingScope()
-//    private val coroutineScope = CoroutineScope(SupervisorJob())
-//    private val applicationScope = ApplicationScope(
-//        scope = coroutineScope,
-//        applicationScope = fakeApplicationScope,
-//        loggingScope = fakeLoggingScope,
-//    )
-//
-//    @Test
-//    fun `should use coroutine scope`() {
-//        assert(applicationScope.coroutineContext == coroutineScope.coroutineContext)
-//    }
-//
-//    @Test
-//    fun `should use application scope`() {
-//        assert(applicationScope.application.name == "Test")
-//        applicationScope.start()
-//        assert(fakeApplicationScope.isRunning())
-//        applicationScope.stop()
-//        assert(!fakeApplicationScope.isRunning())
-//    }
-//
-//    @Test
-//    fun `should use logging scope`() {
-//        applicationScope.logInfo("Info")
-//        applicationScope.logWarning("Warning")
-//        applicationScope.logError("Error")
-//        assert(fakeLoggingScope.messages == listOf(
-//            "INFO: Info",
-//            "WARNING: Warning",
-//            "ERROR: Error",
-//        ))
-//    }
+    private val fakeApplicationScope = FakeApplicationControlScope(
+        application = Application("Test"),
+    )
+    private val fakeLoggingScope = FakeLoggingScope()
+    private val coroutineScope = CoroutineScope(SupervisorJob())
+    private val applicationScope = ApplicationScope(
+        scope = coroutineScope,
+        applicationScope = fakeApplicationScope,
+        loggingScope = fakeLoggingScope,
+    )
+
+    @Test
+    fun `should use coroutine scope`() {
+        assert(applicationScope.coroutineContext == coroutineScope.coroutineContext)
+    }
+
+    @Test
+    fun `should use application scope`() {
+        assert(applicationScope.application.name == "Test")
+        applicationScope.start()
+        assert(fakeApplicationScope.isRunning())
+        applicationScope.stop()
+        assert(!fakeApplicationScope.isRunning())
+    }
+
+    @Test
+    fun `should use logging scope`() {
+        applicationScope.logInfo("Info")
+        applicationScope.logWarning("Warning")
+        applicationScope.logError("Error")
+        assert(fakeLoggingScope.messages == listOf(
+            "INFO: Info",
+            "WARNING: Warning",
+            "ERROR: Error",
+        ))
+    }
 }
 
 class FakeApplicationControlScope(

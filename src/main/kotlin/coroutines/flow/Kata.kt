@@ -13,7 +13,11 @@ import kotlin.test.assertEquals
 
 // Produces a flow of Unit
 // For instance producingUnits(5) -> [Unit, Unit, Unit, Unit, Unit]
-fun producingUnits(num: Int): Flow<Unit> = TODO()
+fun producingUnits(num: Int): Flow<Unit> = flow {
+    for (i in 1..num) {
+        emit(Unit)
+    }
+}
 
 // Adds a delay of time `timeMillis` between elements
 fun <T> Flow<T>.delayEach(timeMillis: Long): Flow<T> = TODO()

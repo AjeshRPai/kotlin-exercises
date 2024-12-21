@@ -1,5 +1,6 @@
 package effective.safe.userrefresher
 
+import effective.efficient.eventlistenerrepository.Event
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -25,11 +26,18 @@ class UserRefresher(
 ) {
     private var refreshJob: Job? = null
 
-    suspend fun refresh(userId: Int) {
-        refreshJob?.join()
-        refreshJob = scope.launch {
-            refreshData(userId)
+    private val channel = Channel<Int>(Channel.CONFLATED)
+
+    init {
+        scope.launch {
+            for(userId in channel){
+                refreshData(userId)
+            }
         }
+    }
+
+    suspend fun refresh(userId: Int) {
+       channel.send(userId)
     }
 }
 
