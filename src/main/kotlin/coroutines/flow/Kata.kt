@@ -20,22 +20,24 @@ fun producingUnits(num: Int): Flow<Unit> = flow {
 }
 
 // Adds a delay of time `timeMillis` between elements
-fun <T> Flow<T>.delayEach(timeMillis: Long): Flow<T> = TODO()
+fun <T> Flow<T>.delayEach(timeMillis: Long): Flow<T> = onEach { delay(timeMillis) }
 
 // Should transform values, where transformation value should have index of the element
 // flowOf("A", "B").mapIndexed { index, value -> "$index$value" } -> ["0A", "1B"]
-fun <T, R> Flow<T>.mapIndexed(transformation: suspend (index: Int, T) -> R): Flow<R> = TODO()
+fun <T, R> Flow<T>.mapIndexed(transformation: suspend (index: Int, T) -> R): Flow<R> =
+    withIndex().map { transformation.invoke(it.index, it.value) }
 
 // Should transform Unit's to next numbers starting from 1
 // For instance flowOf(Unit, Unit, Unit, Unit).toNextNumbers() -> [1, 2, 3, 4]
 // Example:
 // Input   --------U------UU---------U------
 // Result  --------1------23---------4------
-fun Flow<*>.toNextNumbers(): Flow<Int> = TODO()
+fun Flow<*>.toNextNumbers(): Flow<Int> =
+    scan(initial = 0, operation = { accumulator, value -> accumulator + 1 }).drop(1)
 
 // Produces not only elements, but the whole history till now
 // For instance flowOf(1, "A", 'C').withHistory() -> [[], [1], [1, A], [1, A, C]]
-fun <T> Flow<T>.withHistory(): Flow<List<T>> = TODO()
+fun <T> Flow<T>.withHistory(): Flow<List<T>> = scan(emptyList()) { acc, value -> acc + value }
 
 // Based on two light switches, should decide if the general light should be switched on.
 // Should be if one is true and another is false.
@@ -44,7 +46,10 @@ fun <T> Flow<T>.withHistory(): Flow<List<T>> = TODO()
 // switch1 -------t-----f----------t-t-------
 // switch2 ----------------f-t-f--------t-f-t
 // Result  f------t-----f--f-t-f---t-t--f-t-f
-fun makeLightSwitch(switch1: Flow<Boolean>, switch2: Flow<Boolean>): Flow<Boolean> = TODO()
+fun makeLightSwitch(switch1: Flow<Boolean>, switch2: Flow<Boolean>): Flow<Boolean> =
+    switch1.onStart { emit(false) }.combine(switch2.onStart { emit(false) }) { value1, value2 ->
+        value1 xor value2
+    }
 
 // Based on two light switches, should decide if the general light should be switched on.
 // Should be if one is turned on and another is off
@@ -53,9 +58,14 @@ fun makeLightSwitch(switch1: Flow<Boolean>, switch2: Flow<Boolean>): Flow<Boolea
 // switch1 -------U-----U--------------------------U---------------UU-----
 // switch2 ----------------U-------------------U-------------U------------
 // Result  -------t-----f--t-------------------f---t---------f-----tf-----
-fun makeLightSwitchToggle(switch1: Flow<Unit>, switch2: Flow<Unit>): Flow<Boolean> = TODO()
+fun makeLightSwitchToggle(switch1: Flow<Unit>, switch2: Flow<Unit>): Flow<Boolean> = merge(
+    switch1, switch2
+).mapIndexed { index, _ -> index % 2 == 0 }
 
-fun polonaisePairing(track1: Flow<Person>, track2: Flow<Person>): Flow<Pair<Person, Person>> = TODO()
+fun polonaisePairing(track1: Flow<Person>, track2: Flow<Person>): Flow<Pair<Person, Person>> =
+    track1.zip(track2) { value1, value2 ->
+        Pair(value1, value2)
+    }
 
 data class Person(val name: String)
 
