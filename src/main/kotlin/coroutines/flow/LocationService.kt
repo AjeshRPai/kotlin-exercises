@@ -8,13 +8,36 @@ import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 import org.junit.Test
 
+//class LocationService(
+//    locationRepository: LocationRepository,
+//    backgroundScope: CoroutineScope,
+//) {
+//    private val locationUpdates: StateFlow<Location?> = locationRepository.observeLocation()
+//        .stateIn(scope = backgroundScope, started = SharingStarted.Eagerly, initialValue = null)
+//
+//    fun observeLocation(): Flow<Location> =  locationUpdates.filterNotNull()
+//
+//    fun currentLocation(): Location? = locationUpdates.value
+//}
+
 class LocationService(
     locationRepository: LocationRepository,
     backgroundScope: CoroutineScope,
 ) {
-    fun observeLocation(): Flow<Location> = TODO()
+    private val location = locationRepository
+        .observeLocation()
+        .distinctUntilChanged()
+        .shareIn(
+            scope = backgroundScope,
+            started = SharingStarted.Eagerly,
+            replay = 1
+        )
+    fun observeLocation(): Flow<Location> = location
+        .conflate()
 
-    fun currentLocation(): Location? = TODO()
+    fun currentLocation(): Location? = location
+        .replayCache
+        .lastOrNull()
 }
 
 interface LocationRepository {
