@@ -1,5 +1,6 @@
 package effective.safe.userrefresher
 
+import coroutines.flow.kata.producingUnits
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.test.currentTime
@@ -14,20 +15,18 @@ class UserRefresher(
     private val scope: CoroutineScope,
     private val refreshData: suspend (Int) -> Unit,
 ) {
-    private var refreshJob: Job? = null
-
-    private val channel = Channel<Int>(Channel.CONFLATED)
+    private val channel = Channel<Int>(Channel.UNLIMITED)
 
     init {
         scope.launch {
-            for(userId in channel){
+            for (userId in channel) {
                 refreshData(userId)
             }
         }
     }
 
     suspend fun refresh(userId: Int) {
-       channel.send(userId)
+        channel.send(userId)
     }
 }
 
@@ -85,7 +84,7 @@ class UserRefresherTest {
                 finished.incrementAndGet()
             }
         )
-  
+
         val sendTime = measureTime {
             coroutineScope {
                 repeat(100) {
@@ -103,5 +102,7 @@ class UserRefresherTest {
 }
 
 suspend fun await(condition: () -> Boolean) {
-    while (!condition()) { delay(1) }
+    while (!condition()) {
+        delay(1)
+    }
 }
