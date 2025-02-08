@@ -27,12 +27,10 @@ class BestStudentUseCase(
             if (studentIds.isEmpty()) {
                 throw IllegalStateException("No students in the semester")
             }
-            val students = studentIds.map { id ->
-                async {
-                    repo.getStudent(id)
-                }
-            }
-            return@coroutineScope students.maxByOrNull { it.await().result }!!.await()
+            studentIds.map { id ->
+                async { repo.getStudent(id) }
+            }.awaitAll()
+                .maxBy { it.result }
         }
         return student
     }

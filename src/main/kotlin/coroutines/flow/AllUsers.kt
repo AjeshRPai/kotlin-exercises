@@ -2,13 +2,21 @@ package coroutines.flow.allusers
 
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.count
+import kotlinx.coroutines.flow.emitAll
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.test.runTest
 import org.junit.Test
 import kotlin.test.assertEquals
 
 class AllUsers(private val repository: UserRepository) {
-    fun getAllUsers(): Flow<User> = TODO()
+    fun getAllUsers(): Flow<User> = flow{
+        var pageNumber = 0
+        do {
+            val users = repository.fetchUsers(pageNumber)
+            users.forEach { emit(it) }
+            pageNumber++
+        } while (users.isNotEmpty())
+    }
 }
 
 interface UserRepository {

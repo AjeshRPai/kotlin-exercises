@@ -7,7 +7,13 @@ import kotlinx.coroutines.test.currentTime
 import kotlinx.coroutines.test.runTest
 import org.junit.Test
 
-fun <T> Flow<T>.distinct(): Flow<T> = TODO()
+fun <T> Flow<T>.distinct(): Flow<T> = flow {
+    val setOfItems = mutableSetOf<T>()
+
+    collect {
+        if (setOfItems.add(it)) emit(it)
+    }
+}
 
 class DistinctTest {
     @Test

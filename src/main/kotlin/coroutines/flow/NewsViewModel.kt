@@ -1,11 +1,8 @@
 package coroutines.flow.newsviewmodel
 
 import junit.framework.TestCase.assertEquals
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.TestDispatcher
@@ -16,7 +13,7 @@ import org.junit.Before
 import org.junit.Test
 
 class NewsViewModel(
-    newsRepository: NewsRepository,
+    private val newsRepository: NewsRepository,
 ) : BaseViewModel() {
     private val _progressVisible = MutableStateFlow(false)
     val progressVisible = _progressVisible.asStateFlow()
@@ -27,9 +24,37 @@ class NewsViewModel(
     private val _errors = Channel<Throwable>(Channel.UNLIMITED)
     val errors = _errors.receiveAsFlow()
 
+
     init {
-        // TODO
+        updateNews()
     }
+
+    fun updateNews() {
+        newsRepository.fetchNews()
+            .onStart { showProgressBar() }
+            .onCompletion { hideProgressBar() }
+            .onEach { showNews(it) }
+            .retry { error -> error is ApiException }
+            .catch { handleError(it) }
+            .launchIn(viewModelScope)
+    }
+
+    private suspend fun handleError(throwable: Throwable) {
+        _errors.send(throwable)
+    }
+
+    private suspend fun showProgressBar() {
+        _progressVisible.emit(true)
+    }
+
+    private suspend fun hideProgressBar() {
+        _progressVisible.emit(false)
+    }
+
+    private fun showNews(news: News) {
+        _newsToShow.update { it + news }
+    }
+
 }
 
 class ApiException : Exception()

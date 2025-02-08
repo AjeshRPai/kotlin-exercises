@@ -1,24 +1,34 @@
 package coroutines.flow.flowutils
 
-import kotlinx.coroutines.*
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.currentTime
 import kotlinx.coroutines.test.runTest
 import org.junit.Test
 import kotlin.test.assertEquals
 
-val infiniteFlow: Flow<Unit> = TODO()
+val infiniteFlow: Flow<Unit> = flow {
+    while (true) emit(Unit)
+}
 
-val neverFlow: Flow<Nothing> = TODO()
+val neverFlow: Flow<Nothing> = flow<Nothing> {
+    suspendCancellableCoroutine { }
+}
 
-fun everyFlow(timeMillis: Long): Flow<Unit> = TODO()
+fun everyFlow(timeMillis: Long): Flow<Unit> = flow{
+    while (true) {
+        delay(timeMillis)
+        emit(Unit)
+    }
+}
 
-fun <T> flowOf(lambda: suspend () -> T): Flow<T> = TODO()
+fun <T> flowOf(lambda: suspend () -> T): Flow<T> = lambda.asFlow()
 
 fun <T> flowOfFlatten(
     lambda: suspend () -> Flow<T>
-): Flow<T> = TODO()
+): Flow<T> = lambda.asFlow().flattenMerge()
 
 class FlowUtilsTest {
     @Test

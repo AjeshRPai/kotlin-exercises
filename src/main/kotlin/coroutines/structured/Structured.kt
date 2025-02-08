@@ -1,5 +1,6 @@
 package structured
 
+import io.ktor.http.*
 import kotlinx.coroutines.*
 import kotlinx.coroutines.test.currentTime
 import kotlinx.coroutines.test.runTest
@@ -39,12 +40,12 @@ class StructuredFactory {
     // Codes should be stored in the `codes`. Should first wait, and then produce.
     @Throws(ProductionError::class)
     suspend fun makeMachine(control: FactoryControl): Unit = coroutineScope {
-        // TODO
+        control.makeMachine()
     }
 
     // Makes machines every 800ms, but there should be no more than 5 active machines at the same time.
     suspend fun makeWorker(control: FactoryControl): Unit = coroutineScope {
-        // TODO
+        control.makeMachine()
     }
 
     // Checks out the codes and if there is no, waits for 100ms. Otherwise takes the code and stores it using `control.storeCode(code)`.

@@ -6,7 +6,6 @@ import kotlinx.coroutines.SupervisorJob
 import org.junit.Test
 import kotlin.coroutines.EmptyCoroutineContext
 
-// TODO
 
 interface ApplicationControlScope {
     val application: Application

@@ -5,14 +5,18 @@ package coroutines.cancellation
 import kotlinx.coroutines.*
 import java.io.File
 
-suspend fun updateUser() {
+suspend fun updateUser() = withContext(Dispatchers.IO){
     val user = readUser() // blocking
+    ensureActive()
     val userSettings = readUserSettings(user.id) // blocking
 
     try {
         updateUserInDatabase(user, userSettings) // suspending
     } catch (e: CancellationException) {
-        revertUnfinishedTransactions() // suspending
+        withContext(NonCancellable) {
+            revertUnfinishedTransactions() // suspending
+        }
+        throw e
     }
 }
 

@@ -1,20 +1,30 @@
 package coroutines.recipes.raceof
 
+import junit.framework.Assert.assertEquals
 import kotlinx.coroutines.*
 import kotlinx.coroutines.selects.select
 import kotlinx.coroutines.test.currentTime
 import kotlinx.coroutines.test.runTest
 import kotlin.coroutines.CoroutineContext
 import org.junit.Test
-import kotlin.test.assertEquals
 
 suspend fun <T> raceOf(
     racer: suspend CoroutineScope.() -> T,
     vararg racers: suspend CoroutineScope.() -> T
-): T = TODO()
+): T = coroutineScope {
+    select {
+        (listOf(racer) + racers).forEach { racer ->
+                 async {
+                     racer()
+                 }.onAwait {
+                     coroutineContext.job.cancelChildren()
+                     it
+                 }
+             }
+        }
+    }
 
 class RaceOfTest {
-
     @Test
     fun should_wait_for_the_fastest() = runTest {
         raceOf(
