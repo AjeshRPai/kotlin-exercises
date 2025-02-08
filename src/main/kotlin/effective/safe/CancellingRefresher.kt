@@ -1,5 +1,7 @@
 package effective.safe.cancellingrefresher
 
+import coroutines.dispatcher.experiments.dispatcher
+import io.ktor.util.collections.*
 import kotlinx.coroutines.*
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
@@ -13,14 +15,18 @@ class CancellingRefresher(
     private val refreshData: suspend () -> Unit,
 ) {
     private var refreshJob: Job? = null
+    private val refreshLock = Mutex()
+    private val refreshLoc = Any()
 
-    fun refresh() {
+    suspend fun refresh() = withContext(dispatcher){
         refreshJob?.cancel()
         refreshJob = scope.launch {
             refreshData()
         }
     }
 }
+
+
 
 class CancellingRefresherTest {
     @Test
@@ -31,7 +37,6 @@ class CancellingRefresherTest {
                 delay(1000)
             }
         )
-
         coroutineScope {
             repeat(1000) {
                 launch { userRefresher.refresh() }

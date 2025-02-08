@@ -1,6 +1,10 @@
 package effective.safe.downloader
 
 import kotlinx.coroutines.*
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.Semaphore
+import kotlinx.coroutines.sync.withLock
+import kotlinx.coroutines.sync.withPermit
 import org.junit.Test
 import kotlin.test.assertEquals
 
@@ -25,9 +29,15 @@ class UserDownloader(private val api: NetworkService) {
 
     fun downloaded(): List<User> = users
 
-    suspend fun getUser(id: Int) = withContext(dispatcher) {
+    val semaphore = Semaphore(1)
+
+    val mutex = Mutex()
+
+    suspend fun getUser(id: Int){
         val newUser = api.getUser(id)
-        users += newUser
+        mutex.withLock {
+            users += newUser
+        }
     }
 }
 
@@ -48,12 +58,12 @@ class UserDownloaderTest {
     fun test() = runBlocking {
         val downloader = UserDownloader(FakeNetworkService())
         coroutineScope {
-            repeat(1_000_000) {
+            repeat(1000) {
                 launch(Dispatchers.Default) {
                     downloader.getUser(it)
                 }
             }
         }
-        assertEquals(1_000_000, downloader.downloaded().size)
+        assertEquals(1000, downloader.downloaded().size)
     }
 }

@@ -15,7 +15,7 @@ class UserRefresher(
     private val scope: CoroutineScope,
     private val refreshData: suspend (Int) -> Unit,
 ) {
-    private val channel = Channel<Int>(Channel.UNLIMITED)
+    private val channel = Channel<Int>(1)
 
     init {
         scope.launch {

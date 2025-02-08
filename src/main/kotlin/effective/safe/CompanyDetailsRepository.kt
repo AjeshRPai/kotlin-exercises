@@ -1,11 +1,15 @@
 package effective.safe.companydetailsrepository
 
+import com.sksamuel.aedile.core.cacheBuilder
+import coroutines.dispatcher.experiments.dispatcher
+import functional.project.cache
 import kotlinx.coroutines.*
 import kotlinx.coroutines.test.currentTime
 import kotlinx.coroutines.test.runTest
 import java.math.BigDecimal
-import org.junit.Ignore      
+import org.junit.Ignore
 import org.junit.Test
+import java.util.concurrent.ConcurrentHashMap
 import kotlin.test.assertEquals
 import kotlin.time.measureTime
 
@@ -13,37 +17,27 @@ class CompanyDetailsRepository(
     private val client: CompanyDetailsClient,
     dispatcher: CoroutineDispatcher
 ) {
-    private val details = mutableMapOf<Company, CompanyDetails>()
+    private var details = ConcurrentHashMap<Company, Deferred<CompanyDetails>>()
 
-    suspend fun getDetails(company: Company): CompanyDetails {
-        val current = getDetailsOrNull(company)
-        if (current == null) {
-            val companyDetails = client.fetchDetails(company)
-            details[company] = companyDetails
-            return companyDetails
-        }
-        return current
+    suspend fun getDetails(company: Company): CompanyDetails = coroutineScope{
+        details.computeIfAbsent(company) {
+             async{
+                 client.fetchDetails(company)
+            }
+        }.await()
     }
 
-    fun getDetailsOrNull(company: Company): CompanyDetails? {
-        val lock = Any()
-        synchronized(lock) {
-            return@synchronized details[company]
-        }
-        return null
+    suspend fun getDetailsOrNull(company: Company): CompanyDetails?  = details[company]?.await()
+
+    suspend fun getReadyDetails(): Map<Company, CompanyDetails> =  coroutineScope {
+        details.mapValues { (_, deferred) -> deferred.await() }
     }
 
-    fun getReadyDetails(): Map<Company, CompanyDetails> {
-        val lock = Any()
-        synchronized(lock){
-          return details
-        }
-    }
-    
-    fun clear() {
+    suspend fun clear() {
         details.clear()
     }
 }
+
 
 // Run in main
 suspend fun performanceTest(): Unit = coroutineScope {
@@ -280,7 +274,6 @@ class CompanyDetailsRepositoryTest {
     }
 
     @Test
-    @Ignore
     fun `should not fetch the same details twice`() = runTest {
         val company = Company("1")
         val details = CompanyDetails("Company", "Address", BigDecimal.TEN)
