@@ -1,15 +1,31 @@
 package advanced.delegates.lateinit
 
 import org.junit.Test
-import kotlin.properties.Delegates
 import kotlin.properties.ReadWriteProperty
 import kotlin.reflect.KProperty
 import kotlin.test.assertEquals
 import kotlin.test.assertIs
 
-// TODO
-fun LateInit() {
-
+class Lateinit<T> : ReadWriteProperty<Any?, T> {
+    var value: ValueHolder<T> = NotInitialized
+    override fun getValue(
+        thisRef: Any?,
+        prop: KProperty<*>
+    ): T = when (val v = value) {
+        NotInitialized ->
+            error("Uninitialized lateinit property ${prop.name}")
+        is Value -> v.value
+    }
+    override fun setValue(
+        thisRef: Any?,
+        prop: KProperty<*>,
+        value: T
+    ) {
+        this.value = Value(value)
+    }
+    sealed interface ValueHolder<out T>
+    class Value<T>(val value: T) : ValueHolder<T>
+    object NotInitialized : ValueHolder<Nothing>
 }
 
 // Implement Lateinit delegate here
